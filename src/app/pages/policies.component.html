@@ -1,0 +1,44 @@
+<div class="policies-page page-shell">
+  <nav class="breadcrumb" aria-label="Breadcrumb"><a routerLink="/">Home</a><span>/</span><span>Customer policies</span></nav>
+  <header class="policies-heading">
+    <p class="hero-kicker">Customer information</p>
+    <h1>{{ config.businessName }} policies</h1>
+    <p>Read our terms, privacy information, and delivery and return policies before ordering.</p>
+  </header>
+  <nav class="policy-nav" aria-label="Policy sections">
+    <a [routerLink]="[]" fragment="terms">Terms</a>
+    <a [routerLink]="[]" fragment="privacy">Privacy</a>
+    <a [routerLink]="[]" fragment="delivery-returns">Delivery &amp; returns</a>
+    <a routerLink="/contact" fragment="faqs">FAQs</a>
+  </nav>
+  <section id="terms" class="policy-section" aria-labelledby="terms-title">
+    <div><h2 id="terms-title">Terms</h2></div>
+    <div>
+      @if (config.termsText) { <p class="policy-copy">{{ config.termsText }}</p> }
+      @else { <p>Full terms have not yet been published. Please contact us with questions before placing an order.</p> }
+    </div>
+  </section>
+  <section id="privacy" class="policy-section" aria-labelledby="privacy-title">
+    <div><h2 id="privacy-title">Privacy</h2></div>
+    <div>
+      @if (config.privacyText) { <p class="policy-copy">{{ config.privacyText }}</p> }
+      @else { <p>A full privacy notice has not yet been published. Please contact us with questions about your information.</p> }
+    </div>
+  </section>
+  <section id="delivery-returns" class="policy-section" aria-labelledby="delivery-title">
+    <div><h2 id="delivery-title">Delivery &amp; returns</h2></div>
+    <div>
+      <p>Product payment does not include delivery. Delivery fees are arranged separately after payment.</p>
+      <h3>Delivery</h3>
+      @if (config.deliveryPolicy) { <p class="policy-copy">{{ config.deliveryPolicy }}</p> }
+      @else { <p>Please contact us to confirm delivery areas, fees, and times before ordering.</p> }
+      <h3>Returns and refunds</h3>
+      @if (config.returnPolicy) { <p class="policy-copy">{{ config.returnPolicy }}</p> }
+      @else { <p>A full return and refund policy has not yet been published. Please contact us before ordering.</p> }
+    </div>
+  </section>
+  <aside class="policy-help">
+    <div><h2>Need help?</h2><p>Contact us with questions about your purchase.</p></div>
+    <a class="button button-primary" routerLink="/contact">Contact us</a>
+  </aside>
+</div>

@@ -1,0 +1,156 @@
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Injectable, signal } from '@angular/core';
+import { catchError, from, map, mergeMap, Observable, of, shareReplay, tap, throwError, toArray } from 'rxjs';
+import { environment } from '../../environments/environment';
+import { buildApiUrl } from '../core/endpoint';
+import {
+  Product,
+  Review,
+  ReviewInvitation,
+  ReviewSubmission,
+  ReviewSubmitRequest,
+  ReviewSummary,
+} from '../core/store.models';
+
+interface ApiEnvelope<T> {
+  readonly data: T;
+}
+
+export interface ReviewHighlight {
+  readonly product: Product;
+  readonly review: Review;
+}
+
+export interface ReviewHighlightsResult {
+  readonly highlights: readonly ReviewHighlight[];
+  readonly failedProductCount: number;
+}
+
+export abstract class ReviewRepository {
+  abstract getInvitation(token: string): Observable<ReviewInvitation>;
+  abstract getByProductId(productId: string): Observable<readonly Review[]>;
+  abstract submit(productId: string, review: ReviewSubmitRequest): Observable<ReviewSubmission>;
+}
+
+@Injectable({ providedIn: 'root' })
+export class ReviewService extends ReviewRepository {
+  private readonly reviewsState = signal<readonly Review[]>([]);
+  private readonly requests = new Map<string, Observable<readonly Review[]>>();
+  readonly reviews = this.reviewsState.asReadonly();
+
+  constructor(private readonly http: HttpClient) {
+    super();
+  }
+
+  override getInvitation(token: string): Observable<ReviewInvitation> {
+    return this.http
+      .get<ApiEnvelope<ReviewInvitation>>(
+        buildApiUrl(environment.apiBaseUrl, environment.apiEndpoints.reviewInvitation, { token }),
+      )
+      .pipe(
+        map(({ data }) => data),
+        tap((invitation) => {
+          if (invitation.alreadySubmitted) this.invalidate(invitation.product.id);
+        }),
+      );
+  }
+
+  override getByProductId(productId: string): Observable<readonly Review[]> {
+    const cached = this.requests.get(productId);
+    if (cached) return cached;
+
+    const request = this.http
+      .get<ApiEnvelope<readonly Review[]>>(
+        buildApiUrl(environment.apiBaseUrl, environment.apiEndpoints.productReviews, { productId }),
+      )
+      .pipe(
+        map(({ data }) => data),
+        map((reviews) => {
+          this.reviewsState.update((current) => [
+            ...current.filter((review) => review.productId !== productId),
+            ...reviews,
+          ]);
+          return reviews;
+        }),
+        catchError((error: unknown) => {
+          this.requests.delete(productId);
+          return throwError(() => error);
+        }),
+        shareReplay({ bufferSize: 1, refCount: true }),
+      );
+    this.requests.set(productId, request);
+    return request;
+  }
+
+  override submit(productId: string, review: ReviewSubmitRequest): Observable<ReviewSubmission> {
+    const { token, reviewerName, rating, comment } = review;
+    return this.http
+      .post<ApiEnvelope<ReviewSubmission>>(
+        buildApiUrl(environment.apiBaseUrl, environment.apiEndpoints.productReviews, { productId }),
+        { token, reviewerName, rating, comment },
+      )
+      .pipe(
+        map(({ data }) => data),
+        tap(() => this.invalidate(productId)),
+        catchError((error: unknown) => {
+          if (this.isAlreadySubmittedError(error)) this.invalidate(productId);
+          return throwError(() => error);
+        }),
+      );
+  }
+
+  private isAlreadySubmittedError(error: unknown): boolean {
+    if (!(error instanceof HttpErrorResponse)) return false;
+    const code = (error.error?.error as { code?: string } | undefined)?.code;
+    return code === 'REVIEW_ALREADY_SUBMITTED';
+  }
+
+  private invalidate(productId: string): void {
+    this.requests.delete(productId);
+    this.reviewsState.update((current) => current.filter((review) => review.productId !== productId));
+  }
+
+  forProduct(productId: string): readonly Review[] {
+    return this.reviewsState()
+      .filter((review) => review.productId === productId)
+      .sort((first, second) => second.createdAt.localeCompare(first.createdAt));
+  }
+
+  summaryFor(productId: string): ReviewSummary {
+    const reviews = this.forProduct(productId);
+    const total = reviews.reduce((sum, review) => sum + review.rating, 0);
+    return { average: reviews.length ? total / reviews.length : 0, count: reviews.length };
+  }
+
+  getHighlights(
+    products: readonly Product[],
+    limit = 3,
+    concurrency = 4,
+  ): Observable<ReviewHighlightsResult> {
+    return from(products).pipe(
+      mergeMap(
+        (product) =>
+          this.getByProductId(product.id).pipe(
+            map((reviews) => ({
+              failed: false,
+              highlights: reviews.map((review) => ({ product, review })),
+            })),
+            catchError(() => of({ failed: true, highlights: [] as ReviewHighlight[] })),
+          ),
+        concurrency,
+      ),
+      toArray(),
+      map((results) => ({
+        failedProductCount: results.filter((result) => result.failed).length,
+        highlights: results
+          .flatMap((result) => result.highlights)
+          .sort(
+            (first, second) =>
+              second.review.rating - first.review.rating ||
+              second.review.createdAt.localeCompare(first.review.createdAt),
+          )
+          .slice(0, limit),
+      })),
+    );
+  }
+}

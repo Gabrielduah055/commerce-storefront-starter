@@ -1,0 +1,71 @@
+<div class="contact-page">
+  <section class="contact-hero page-shell" aria-labelledby="contact-title">
+    <div class="contact-hero-copy">
+      <nav class="breadcrumb" aria-label="Breadcrumb"><a routerLink="/">Home</a><span>/</span><span>Contact</span></nav>
+      <p class="hero-kicker">Get in touch</p>
+      <h1 id="contact-title">Contact {{ config.businessName }}</h1>
+      <p class="text-[15px]! font-medium! leading-7! sm:text-base!">Contact us with questions about our products or your order. Delivery fees are arranged separately.</p>
+      @if (config.whatsappNumber) {
+        <a class="button button-primary" [href]="config.whatsappUrl" target="_blank" rel="noopener"><i class="uil uil-whatsapp" aria-hidden="true"></i>Chat on WhatsApp <i class="uil uil-arrow-right" aria-hidden="true"></i></a>
+      } @else {
+        <p class="contact-config-note">WhatsApp contact is currently unavailable.</p>
+      }
+      @if (config.locationLabel) {
+      <div class="contact-location">
+        <i class="uil uil-map-marker" aria-hidden="true"></i>
+        <div><strong>Our Location</strong><span>{{ config.locationLabel }}</span><p class="text-sm! font-medium! leading-6!">Delivery areas and charges are confirmed with each order.</p></div>
+      </div>
+      }
+      @if (config.email) { <p><a [href]="'mailto:' + config.email">{{ config.email }}</a></p> }
+      @if (config.phone) { <p><a [href]="'tel:' + config.phone">{{ config.phone }}</a></p> }
+      @if (config.chatEnabled) { <p>Use {{ config.chatLabel }} for help while shopping.</p> }
+    </div>
+    <img [src]="config.heroImageUrl" [alt]="config.heroImageAlt" width="1920" height="819" fetchpriority="high" decoding="async" />
+  </section>
+
+  <section id="faqs" class="faq-section page-shell" aria-labelledby="faq-title">
+    <p class="hero-kicker">Helpful information</p>
+    <h2 id="faq-title">Frequently Asked Questions</h2>
+    <p class="text-[15px]! font-medium! leading-7! sm:text-base!">These answers describe the current storefront and backend-confirmed Paystack flow.</p>
+    <div class="faq-list">
+      <details open>
+        <summary><span>1</span><strong>How do I pay for products?</strong><i class="uil uil-angle-down" aria-hidden="true"></i></summary>
+        <p class="text-[15px]! font-medium! leading-7! sm:text-base!">Add products to your cart, enter the requested customer and delivery details, give explicit WhatsApp consent, and continue to Paystack's hosted checkout. Your product total is confirmed securely before payment starts.</p>
+      </details>
+      <details>
+        <summary><span>2</span><strong>How is payment confirmed?</strong><i class="uil uil-angle-down" aria-hidden="true"></i></summary>
+        <p class="text-[15px]! font-medium! leading-7! sm:text-base!">Your payment status is checked securely after checkout. If confirmation is delayed, wait and recheck your order instead of paying again.</p>
+      </details>
+      <details>
+        <summary><span>3</span><strong>Does the Paystack amount include delivery?</strong><i class="uil uil-angle-down" aria-hidden="true"></i></summary>
+        <p class="text-[15px]! font-medium! leading-7! sm:text-base!">No. Paystack collects the backend-confirmed product amount only. Delivery is quoted separately and paid on delivery. A delivery fee that has not been quoted is not the same as free delivery.</p>
+      </details>
+      <details>
+        <summary><span>4</span><strong>What if I return from Paystack without paying?</strong><i class="uil uil-angle-down" aria-hidden="true"></i></summary>
+        <p class="text-[15px]! font-medium! leading-7! sm:text-base!">Returning does not cancel the server checkout or its stock reservation. The result page checks the saved checkout status, polls for a limited time, and provides a manual recheck when confirmation is still pending.</p>
+      </details>
+      <details>
+        <summary><span>5</span><strong>What is WhatsApp used for?</strong><i class="uil uil-angle-down" aria-hidden="true"></i></summary>
+        <p class="text-[15px]! font-medium! leading-7! sm:text-base!">After a backend-confirmed product payment, WhatsApp is an optional way to coordinate delivery using the public order number. It does not create a second purchase request and is not required to start Paystack payment.</p>
+      </details>
+      <details>
+        <summary><span>6</span><strong>What are the return and refund terms?</strong><i class="uil uil-angle-down" aria-hidden="true"></i></summary>
+        <p class="text-[15px]! font-medium! leading-7! sm:text-base!">{{ config.returnPolicy || 'Please review the return and refund information before ordering.' }} Review the <a class="text-link" routerLink="/policies" fragment="delivery-returns">Delivery &amp; returns information</a> for the verified flow and the details still missing.</p>
+      </details>
+    </div>
+  </section>
+
+  <section class="contact-banner" aria-labelledby="confidence-title">
+    <img [src]="config.heroImageUrl" [alt]="config.heroImageAlt" width="1672" height="941" loading="lazy" decoding="async" />
+    <div class="page-shell contact-banner-copy">
+      <p class="hero-kicker">Explore our collection</p>
+      <h2 id="confidence-title">Shop with confidence</h2>
+      <p class="text-[15px]! font-medium! leading-7! sm:text-base!">{{ config.description }}</p>
+      @if (config.whatsappNumber) {
+        <a class="button button-primary" [href]="config.whatsappUrl" target="_blank" rel="noopener"><i class="uil uil-whatsapp" aria-hidden="true"></i>Chat on WhatsApp <i class="uil uil-arrow-right" aria-hidden="true"></i></a>
+      } @else {
+        <a class="button button-primary" routerLink="/shop">Shop products <i class="uil uil-arrow-right" aria-hidden="true"></i></a>
+      }
+    </div>
+  </section>
+</div>

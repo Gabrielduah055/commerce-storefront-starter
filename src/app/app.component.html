@@ -1,0 +1,153 @@
+<a class="skip-link" [routerLink]="[]" fragment="main-content">Skip to content</a>
+
+<header class="site-header">
+  <div class="header-shell header-main-row">
+    <button #menuButton class="menu-button" type="button" [attr.aria-expanded]="menuOpen()" aria-controls="mobile-menu"
+      (click)="toggleMobileMenu($event)">
+      <i class="uil" [class.uil-times]="menuOpen()" [class.uil-bars]="!menuOpen()" aria-hidden="true"></i>
+      <span class="sr-only">{{ menuOpen() ? 'Close menu' : 'Open menu' }}</span>
+    </button>
+
+    <a class="wordmark" routerLink="/" aria-label="{{ config.businessName }} home">
+      <strong>{{ config.businessName }}</strong>
+      <small>{{ config.tagline }}</small>
+    </a>
+
+    <form class="header-search" role="search" (ngSubmit)="submitSearch()">
+      <label class="header-search-field">
+        <i class="uil uil-search" aria-hidden="true"></i>
+        <span class="sr-only">Search products</span>
+        <input type="search" name="site-search" [(ngModel)]="searchTerm"
+          placeholder="Search products..." />
+      </label>
+      <button type="submit">Search</button>
+    </form>
+
+    <div class="header-actions">
+      <a class="cart-link" routerLink="/cart" [attr.aria-label]="'Open cart with ' + cart.itemCount() + ' items'">
+        <i class="uil uil-shopping-cart-alt" aria-hidden="true"></i>
+        <span class="cart-count" aria-live="polite">{{ cart.itemCount() }}</span>
+      </a>
+    </div>
+  </div>
+
+  <nav class="desktop-nav" aria-label="Primary navigation">
+    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+    <div #shopMenu class="shop-menu">
+      <button class="shop-menu-trigger" type="button" [attr.aria-expanded]="shopMenuOpen()" (click)="toggleShopMenu($event)">
+        Shop <i class="uil uil-angle-down" aria-hidden="true"></i>
+      </button>
+      @if (shopMenuOpen()) {
+      <div class="shop-menu-panel">
+        <a routerLink="/shop" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenus()">All products</a>
+        @for (category of categories; track category.id) {
+          <a routerLink="/shop" [queryParams]="{ category: category.name }" (click)="closeMenus()">{{ category.name }}</a>
+        }
+      </div>
+      }
+    </div>
+    <a routerLink="/contact" routerLinkActive="active" (click)="closeMenus()">Contact</a>
+  </nav>
+</header>
+
+@if (menuOpen()) {
+  <div class="mobile-drawer-backdrop" (click)="menuOpen.set(false)">
+    <aside #mobileMenu id="mobile-menu" class="mobile-drawer" aria-label="Mobile navigation" (click)="$event.stopPropagation()">
+      <div class="mobile-drawer-head">
+        <button type="button" aria-label="Close menu" (click)="menuOpen.set(false)"><i class="uil uil-times" aria-hidden="true"></i></button>
+        <a class="wordmark" routerLink="/" (click)="closeMenus()"><strong>{{ config.businessName }}</strong><small>{{ config.tagline }}</small></a>
+      </div>
+      <nav class="mobile-drawer-nav">
+        <a class="drawer-primary" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenus()"><i class="uil uil-home" aria-hidden="true"></i><span>Home</span></a>
+        <a routerLink="/shop" (click)="closeMenus()"><i class="uil uil-apps" aria-hidden="true"></i><span>Shop all</span><i class="uil uil-angle-right-b" aria-hidden="true"></i></a>
+        <p>Shop by category</p>
+        @for (category of categories; track category.id) {
+          <a routerLink="/shop" [queryParams]="{ category: category.name }" (click)="closeMenus()"><i class="uil uil-apps" aria-hidden="true"></i><span>{{ category.name }}</span><i class="uil uil-angle-right-b" aria-hidden="true"></i></a>
+        }
+        <div class="drawer-divider"></div>
+        <a routerLink="/contact" (click)="closeMenus()"><i class="uil uil-comment-alt-message" aria-hidden="true"></i><span>Contact</span><i class="uil uil-angle-right-b" aria-hidden="true"></i></a>
+        <a routerLink="/cart" (click)="closeMenus()"><i class="uil uil-shopping-cart-alt" aria-hidden="true"></i><span>Cart ({{ cart.itemCount() }})</span><i class="uil uil-angle-right-b" aria-hidden="true"></i></a>
+      </nav>
+    </aside>
+  </div>
+}
+
+<main id="main-content">
+  <router-outlet />
+</main>
+
+<footer class="site-footer">
+  <div class="footer-shell">
+    <div class="footer-brand">
+      <a class="wordmark wordmark-light" routerLink="/">
+        <strong>{{ config.businessName }}</strong>
+        <small>{{ config.tagline }}</small>
+      </a>
+      <p class="text-sm! font-medium! leading-6!">Explore our collection for everyday cooking and special occasions. Practical. Stylish. Made for brighter homes.</p>
+      <div class="footer-social" style="margin-top:1.2rem;">
+        @if (config.instagramUrl) {
+        <a [href]="config.instagramUrl" target="_blank" rel="noopener" aria-label="Instagram">IG</a>
+        }
+        @if (config.facebookUrl) {
+        <a [href]="config.facebookUrl" target="_blank" rel="noopener" aria-label="Facebook">FB</a>
+        }
+      </div>
+    </div>
+
+    <div class="footer-links">
+      <div>
+        <h2>Shop</h2>
+        <a routerLink="/shop">All products</a>
+        @for (category of categories; track category.id) {
+          <a routerLink="/shop" [queryParams]="{ category: category.name }">{{ category.name }}</a>
+        }
+      </div>
+      <div>
+        <h2>Contact</h2>
+        <p class="text-sm! font-medium! leading-6!">Get in touch with us for product enquiries and support.</p>
+        <a routerLink="/contact">Contact {{ config.businessName }}</a>
+        @if (config.whatsappNumber) {
+        <div class="footer-whatsapp">
+          <a class="button button-whatsapp"
+            [href]="config.whatsappUrl" target="_blank" rel="noopener">
+            Chat on WhatsApp
+          </a>
+        </div>
+        }
+      </div>
+      <div>
+        <h2>Customer care</h2>
+        <a routerLink="/policies" fragment="terms">Terms</a>
+        <a routerLink="/policies" fragment="privacy">Privacy</a>
+        <a routerLink="/policies" fragment="delivery-returns">Delivery &amp; returns</a>
+        <a routerLink="/contact" fragment="faqs">FAQs</a>
+      </div>
+      @if (config.instagramUrl || config.facebookUrl) {
+      <div>
+        <h2>Social</h2>
+        @if (config.instagramUrl) {
+        <a [href]="config.instagramUrl" target="_blank" rel="noopener">Instagram</a>
+        }
+        @if (config.facebookUrl) {
+        <a [href]="config.facebookUrl" target="_blank" rel="noopener">Facebook</a>
+        }
+      </div>
+      }
+      @if (config.locationLabel) {
+      <div>
+        <h2>Location</h2>
+        <p class="footer-location"><i class="uil uil-map-marker" aria-hidden="true"></i><strong>{{ config.locationLabel }}</strong></p>
+        <p class="text-sm! font-medium! leading-6!">Delivery details are confirmed when you place your order.</p>
+      </div>
+      }
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span>© {{ currentYear }} {{ config.businessName }}. All rights reserved.</span>
+  </div>
+</footer>
+
+@if (config.chatEnabled) {
+  <app-shopping-assistant />
+}

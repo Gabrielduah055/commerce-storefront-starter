@@ -1,0 +1,123 @@
+<div class="review-page page-shell">
+  @if (loading) {
+    <app-loading-spinner label="Checking your review link..." />
+  } @else if (pageError === 'missing-token') {
+    <section class="empty-state" role="alert">
+      <h1>This review link is incomplete.</h1>
+      <p class="text-[15px]! font-medium! leading-7! sm:text-base!">Open the complete purchase review link you received through WhatsApp.</p>
+      <a class="button button-dark" routerLink="/shop">Return to the shop</a>
+    </section>
+  } @else if (pageError === 'invalid-link') {
+    <section class="empty-state" role="alert">
+      <h1>This review link is not valid.</h1>
+      <p class="text-[15px]! font-medium! leading-7! sm:text-base!">Check that you opened the complete purchase review link you received through WhatsApp.</p>
+      <a class="button button-dark" routerLink="/shop">Return to the shop</a>
+    </section>
+  } @else if (pageError === 'product-mismatch') {
+    <section class="empty-state" role="alert">
+      <h1>This link does not match the product in the address.</h1>
+      <p class="text-[15px]! font-medium! leading-7! sm:text-base!">For your security, open the original purchase review link you received through WhatsApp.</p>
+      @if (invitation) {
+        <a class="button button-dark" [routerLink]="['/product', invitation.product.slug]">View {{ invitation.product.name }}</a>
+      } @else {
+        <a class="button button-dark" routerLink="/shop">Return to the shop</a>
+      }
+    </section>
+  } @else if (pageError === 'ineligible') {
+    <section class="empty-state" role="alert">
+      <h1>This order is not eligible for a review.</h1>
+      <p class="text-[15px]! font-medium! leading-7! sm:text-base!">This purchase cannot accept a customer review. Contact {{ config.businessName }} if you think this is a mistake.</p>
+      <a class="button button-dark" routerLink="/contact">Contact {{ config.businessName }}</a>
+    </section>
+  } @else if (pageError === 'configuration-unavailable') {
+    <section class="empty-state" role="alert">
+      <h1>Reviews are not available right now.</h1>
+      <p class="text-[15px]! font-medium! leading-7! sm:text-base!">{{ config.businessName }}’s review service is currently unavailable. Please try your purchase review link again later.</p>
+      <a class="button button-dark" routerLink="/shop">Return to the shop</a>
+    </section>
+  } @else if (pageError === 'load-error') {
+    <section class="empty-state" role="alert">
+      <h1>We could not check this review link.</h1>
+      <p class="text-[15px]! font-medium! leading-7! sm:text-base!">Check your connection and refresh the page. Opening the link does not use it up.</p>
+      <a class="button button-dark" routerLink="/shop">Return to the shop</a>
+    </section>
+  } @else if (invitation) {
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a routerLink="/">Shop</a><span>/</span><a [routerLink]="['/product', invitation.product.slug]">{{ invitation.product.name }}</a><span>/</span><span>Review</span>
+    </nav>
+    <div class="review-shell">
+      <aside class="review-product">
+        @if (product?.images?.[0]; as image) {
+          <img [src]="image.src" [alt]="image.alt" width="700" height="560" decoding="async" />
+        } @else {
+          <div class="product-image-placeholder" aria-label="Product image not supplied"><i class="uil uil-image-v" aria-hidden="true"></i><small>Product image unavailable</small></div>
+        }
+        @if (product?.category; as category) {
+          <span>{{ category }}</span>
+        }
+        <h1>How was the {{ invitation.product.name }}?</h1>
+        <p class="text-[15px]! font-medium! leading-7! sm:text-base!">Your experience can help another {{ config.businessName }} customer choose confidently.</p>
+      </aside>
+
+      <section class="review-form-card" aria-labelledby="review-form-title">
+        @if (submitted) {
+          <div class="review-success">
+            <div aria-hidden="true"><i class="uil uil-check"></i></div>
+            <h2 id="review-form-title">Thank you for your review.</h2>
+            <p class="text-[15px]! font-medium! leading-7! sm:text-base!">Your review is now published on the product page.</p>
+            <a class="button button-dark" [routerLink]="['/product', invitation.product.slug]">View product</a>
+          </div>
+        } @else if (alreadySubmitted) {
+          <div class="review-success">
+            <div aria-hidden="true"><i class="uil uil-check"></i></div>
+            <h2 id="review-form-title">You’ve already submitted your review.</h2>
+            <p class="text-[15px]! font-medium! leading-7! sm:text-base!">Each purchase review link can be submitted once.</p>
+            <a class="button button-dark" [routerLink]="['/product', invitation.product.slug]">View product</a>
+          </div>
+        } @else {
+          <h2 id="review-form-title">Share your experience</h2>
+          <p class="text-[15px]! font-medium! leading-7! sm:text-base!">You may discuss the product, {{ config.businessName }}’s service, or both.</p>
+          <form [formGroup]="reviewForm" (ngSubmit)="submit()" novalidate>
+            <fieldset class="rating-field">
+              <legend>Your rating</legend>
+              <div>
+                @for (star of [1, 2, 3, 4, 5]; track star) {
+                  <button
+                    type="button"
+                    [class.selected]="reviewForm.controls.rating.value >= star"
+                    [attr.aria-label]="star + (star === 1 ? ' star' : ' stars')"
+                    [attr.aria-pressed]="reviewForm.controls.rating.value === star"
+                    [disabled]="submitting"
+                    (click)="setRating(star)"
+                  >★</button>
+                }
+              </div>
+              @if (reviewForm.controls.rating.touched && reviewForm.controls.rating.invalid) {
+                <small class="field-error">Choose a whole-number rating from 1 to 5.</small>
+              }
+            </fieldset>
+            <label class="form-field">
+              <span>Your name</span>
+              <input type="text" formControlName="reviewerName" autocomplete="name" />
+              @if (reviewForm.controls.reviewerName.touched && reviewForm.controls.reviewerName.invalid) {
+                <small class="field-error">Enter between 2 and 60 characters.</small>
+              }
+            </label>
+            <label class="form-field">
+              <span>Your review</span>
+              <textarea rows="6" formControlName="comment"></textarea>
+              <small>{{ reviewForm.controls.comment.value.trim().length }}/500 characters</small>
+              @if (reviewForm.controls.comment.touched && reviewForm.controls.comment.invalid) {
+                <small class="field-error">Write between 10 and 500 characters.</small>
+              }
+            </label>
+            @if (submitErrorMessage) {
+              <p class="status-message error" role="alert">{{ submitErrorMessage }}</p>
+            }
+            <button class="button button-dark review-submit" type="submit" [disabled]="submitting || submitted || alreadySubmitted">{{ submitting ? 'Submitting…' : 'Submit review' }}</button>
+          </form>
+        }
+      </section>
+    </div>
+  }
+</div>

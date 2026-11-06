@@ -1,0 +1,178 @@
+<div class="shopping-assistant">
+  @if (chat.panelOpen()) {
+    <section id="shopping-assistant-panel" class="shopping-assistant-panel" aria-labelledby="shopping-assistant-title">
+      <header class="shopping-assistant-header">
+        <div>
+          <span class="shopping-assistant-mark" aria-hidden="true"><i class="uil uil-comment-alt-dots"></i></span>
+          <div>
+            <h2 id="shopping-assistant-title">{{ config.chatLabel }}</h2>
+            <p>Shopping help from the current catalog</p>
+          </div>
+        </div>
+        <button type="button" aria-label="Close {{ config.chatLabel }}" (click)="closePanel()">
+          <i class="uil uil-times" aria-hidden="true"></i>
+        </button>
+      </header>
+
+      <div #messageList class="shopping-assistant-messages" role="log" aria-live="polite" aria-relevant="additions">
+        @for (message of messages(); track message.id) {
+          <article
+            class="shopping-assistant-message"
+            [class.user-message]="message.role === 'user'"
+            [class.error-message]="message.error"
+            [attr.role]="message.error ? 'alert' : null"
+          >
+            @if (message.role === 'assistant' && message.formattedText; as formattedText) {
+              <div class="shopping-assistant-rich-text">
+                @for (block of formattedText; track $index) {
+                  @switch (block.kind) {
+                    @case ('heading') {
+                      <h3>
+                        @for (segment of block.segments; track $index) {
+                          @if (segment.kind === 'link' && segment.href) {
+                            <a [href]="segment.href">{{ segment.text }}</a>
+                          } @else if (segment.strong) {
+                            <strong>{{ segment.text }}</strong>
+                          } @else {
+                            <span>{{ segment.text }}</span>
+                          }
+                        }
+                      </h3>
+                    }
+                    @case ('ordered-list') {
+                      <ol>
+                        @for (item of block.items; track $index) {
+                          <li>
+                            @for (segment of item; track $index) {
+                              @if (segment.kind === 'link' && segment.href) {
+                                <a [href]="segment.href">{{ segment.text }}</a>
+                              } @else if (segment.strong) {
+                                <strong>{{ segment.text }}</strong>
+                              } @else {
+                                <span>{{ segment.text }}</span>
+                              }
+                            }
+                          </li>
+                        }
+                      </ol>
+                    }
+                    @case ('unordered-list') {
+                      <ul>
+                        @for (item of block.items; track $index) {
+                          <li>
+                            @for (segment of item; track $index) {
+                              @if (segment.kind === 'link' && segment.href) {
+                                <a [href]="segment.href">{{ segment.text }}</a>
+                              } @else if (segment.strong) {
+                                <strong>{{ segment.text }}</strong>
+                              } @else {
+                                <span>{{ segment.text }}</span>
+                              }
+                            }
+                          </li>
+                        }
+                      </ul>
+                    }
+                    @default {
+                      <p>
+                        @for (segment of block.segments; track $index) {
+                          @if (segment.kind === 'link' && segment.href) {
+                            <a [href]="segment.href">{{ segment.text }}</a>
+                          } @else if (segment.strong) {
+                            <strong>{{ segment.text }}</strong>
+                          } @else {
+                            <span>{{ segment.text }}</span>
+                          }
+                        }
+                      </p>
+                    }
+                  }
+                }
+              </div>
+            } @else {
+              <p>{{ message.text }}</p>
+            }
+            @if (message.retryMessage; as retryMessage) {
+              <button
+                class="shopping-assistant-retry"
+                type="button"
+                [disabled]="sending()"
+                (click)="retry(retryMessage, message.restartBeforeRetry)"
+              >
+                {{ message.restartBeforeRetry ? 'Start new chat and retry' : 'Try again' }}
+              </button>
+            }
+            @if (message.products?.length) {
+              <div class="shopping-assistant-products" aria-label="Suggested products">
+                @for (product of message.products; track product.id) {
+                  <a [routerLink]="['/product', product.slug]" (click)="closePanel()">
+                    @if (product.image; as image) {
+                      <img [src]="image.src" [alt]="image.alt" width="72" height="72" loading="lazy" decoding="async" />
+                    } @else {
+                      <span class="ask-product-placeholder" aria-hidden="true"><i class="uil uil-image-v"></i></span>
+                    }
+                    <span>
+                      <strong>{{ product.name }}</strong>
+                      <small>{{ product.price | currency: product.currency : 'symbol-narrow' : '1.2-2' : 'en-GH' }}</small>
+                      <em [class.out-of-stock]="product.availability === 'out_of_stock'">
+                        {{ product.availability === 'in_stock' ? 'In stock' : product.availability === 'low_stock' ? 'Low stock' : 'Out of stock' }}
+                      </em>
+                    </span>
+                    <i class="uil uil-angle-right-b" aria-hidden="true"></i>
+                  </a>
+                }
+              </div>
+            }
+            @if (message.suggestedFollowUps?.length) {
+              <div class="shopping-assistant-followups" aria-label="Suggested questions">
+                @for (followUp of message.suggestedFollowUps; track followUp) {
+                  <button type="button" [disabled]="sending()" (click)="submit(followUp)">{{ followUp }}</button>
+                }
+              </div>
+            }
+          </article>
+        }
+        @if (sending()) {
+          <div class="shopping-assistant-thinking" role="status">
+            <span></span><span></span><span></span><span class="sr-only">{{ config.chatLabel }} is checking the catalog</span>
+          </div>
+        }
+      </div>
+
+      <form class="shopping-assistant-form" (ngSubmit)="submit()">
+        <label for="shopping-assistant-message">Your question</label>
+        <div>
+          <textarea
+            #messageInput
+            id="shopping-assistant-message"
+            name="shopping-assistant-message"
+            [(ngModel)]="messageText"
+            maxlength="1500"
+            rows="1"
+            placeholder="What are you looking for?"
+            [disabled]="sending()"
+            (keydown)="handleInputKeydown($event)"
+          ></textarea>
+          <button type="submit" aria-label="Send message" [disabled]="sending() || !messageText.trim()">
+            <i class="uil uil-message" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="shopping-assistant-form-meta">
+          <span>Enter to send. Shift + Enter for a new line.</span>
+          <button type="button" (click)="startOver()">Start over</button>
+        </div>
+      </form>
+    </section>
+  }
+
+  <button
+    class="shopping-assistant-launcher"
+    type="button"
+    aria-controls="shopping-assistant-panel"
+    [attr.aria-expanded]="chat.panelOpen()"
+    (click)="togglePanel()"
+  >
+    <i class="uil" [class.uil-times]="chat.panelOpen()" [class.uil-comment-alt-dots]="!chat.panelOpen()" aria-hidden="true"></i>
+    <span>{{ chat.panelOpen() ? 'Close' : config.chatLabel }}</span>
+  </button>
+</div>

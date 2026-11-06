@@ -1,0 +1,23 @@
+@import "tailwindcss";
+@import "./styles/storefront.css";
+@import "./styles/pages.css";
+@import "./styles/home.css";
+@import "./styles/shopping-assistant.css";
+
+@theme {
+  --font-sans: "Montserrat", "Segoe UI", Arial, sans-serif;
+  --color-brand: #fb451e;
+  --color-brand-dark: #db3514;
+  --color-brand-ink: #11151d;
+  --color-brand-muted: #4f5866;
+}
+
+@layer base {
+  body {
+    @apply font-sans text-base font-medium text-brand-ink antialiased;
+  }
+
+  p {
+    @apply font-medium;
+  }
+}

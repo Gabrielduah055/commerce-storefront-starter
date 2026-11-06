@@ -1,0 +1,137 @@
+<section class="home-hero page-shell relative overflow-hidden" aria-labelledby="hero-title">
+  <div class="home-hero-copy relative z-10 flex flex-col items-start justify-center">
+    <p class="hero-kicker">Shop {{ config.businessName }}</p>
+    <h1 id="hero-title">{{ config.heroHeading }}</h1>
+    <p class="text-[15px]! font-medium! leading-7! sm:text-base!">{{ config.heroDescription }}</p>
+    <a class="button button-primary" routerLink="/shop">Browse all products <i class="uil uil-arrow-right" aria-hidden="true"></i></a>
+  </div>
+  <div class="home-hero-media">
+    <img [src]="config.heroImageUrl" [alt]="config.heroImageAlt" width="2048" height="768" fetchpriority="high" decoding="async" />
+  </div>
+</section>
+
+@if (loadError) {
+  <section class="empty-state page-shell" role="alert">
+    <i class="uil uil-exclamation-triangle" aria-hidden="true"></i>
+    <h2>We could not load the catalog.</h2>
+    <p class="text-[15px]! font-medium! leading-7! sm:text-base!">Check your connection and try again.</p>
+    <button class="button button-primary" type="button" (click)="load()">Try again</button>
+  </section>
+} @else if (loading) {
+  <app-loading-spinner class="page-shell block" label="Loading the latest products..." />
+}
+
+@if (!loading && !loadError) {
+@if (categories.length) {
+<section class="home-section page-shell" aria-labelledby="categories-title">
+  <div class="compact-heading heading-with-link">
+    <h2 id="categories-title">Shop by category</h2>
+    <a class="button button-outline button-small" routerLink="/shop">Shop all products <i class="uil uil-arrow-right" aria-hidden="true"></i></a>
+  </div>
+  @if (categories.length) {
+  <div class="home-category-grid">
+    @for (category of categories; track category.id) {
+      <a class="home-category-card" routerLink="/shop" [queryParams]="{ category: category.name }">
+        @if (category.image; as image) {
+        <img [src]="image.src" [alt]="image.alt" width="600" height="420" loading="lazy" decoding="async" />
+        }
+        <span>{{ category.name }}</span>
+        <span class="category-action" aria-hidden="true"><i class="uil uil-arrow-right"></i></span>
+      </a>
+    }
+  </div>
+  }
+</section>
+}
+
+@if (!products.length) {
+  <section class="empty-state page-shell"><h2>No products available yet.</h2></section>
+}
+
+@if (featuredProducts.length) {
+<section class="home-section featured-section page-shell" aria-labelledby="featured-title">
+  <div class="compact-heading heading-with-link">
+    <h2 id="featured-title">Featured Products</h2>
+    <a class="text-link" routerLink="/shop">Shop all products <i class="uil uil-arrow-right" aria-hidden="true"></i></a>
+  </div>
+  <div class="featured-grid home-product-rail" tabindex="0" aria-label="Featured products. Scroll horizontally for more items on a small screen.">
+    @for (product of featuredProducts; track product.id) {
+      <app-product-card [product]="product" />
+    }
+  </div>
+</section>
+}
+
+@if (config.chatEnabled) {
+<section class="support-band" aria-labelledby="support-title">
+  <div class="page-shell support-band-inner">
+    <div class="support-icon" aria-hidden="true"><i class="uil uil-comment-alt-dots"></i></div>
+    <div>
+      <p class="section-label">Need help choosing?</p>
+      <h2 id="support-title">{{ config.chatLabel }} while you shop</h2>
+      <p class="text-[15px]! font-medium! leading-7! sm:text-base!">Compare current products, prices, availability, and checkout details.</p>
+    </div>
+    <button class="button button-primary" type="button" (click)="shoppingChat.openPanel()">
+      {{ config.chatLabel }} <i class="uil uil-arrow-right" aria-hidden="true"></i>
+    </button>
+  </div>
+</section>
+}
+
+@if (recommendations.length) {
+  <section class="home-section recommendations-section page-shell" aria-labelledby="recommendations-title">
+    <div class="compact-heading recommendations-heading">
+      <div>
+        <h2 id="recommendations-title">Picked for you</h2>
+        <p>{{ recommendationContext }}</p>
+      </div>
+      <a class="text-link" routerLink="/shop">Shop all products <i class="uil uil-arrow-right" aria-hidden="true"></i></a>
+    </div>
+    <div class="featured-grid home-product-rail" tabindex="0" aria-label="Recommended products. Scroll horizontally for more items on a small screen.">
+      @for (product of recommendations; track product.id) {
+        <app-product-card [product]="product" />
+      }
+    </div>
+  </section>
+}
+
+<section class="home-section review-highlights-section page-shell" aria-labelledby="review-highlights-title">
+  <div class="compact-heading review-highlights-heading">
+    <div>
+      <h2 id="review-highlights-title">What customers are saying</h2>
+      <p>{{ reviewLoadIncomplete && reviewHighlights.length ? 'Some customer reviews could not be loaded.' : 'Customer reviews from ' + config.businessName + '.' }}</p>
+    </div>
+  </div>
+  @if (reviewsLoading) {
+    <app-loading-spinner label="Loading customer reviews..." />
+  } @else if (reviewHighlights.length) {
+    <div class="review-highlights-grid">
+      @for (highlight of reviewHighlights; track highlight.review.id; let index = $index) {
+        <article class="review-highlight" [class.featured-review]="index === 0">
+          <span class="review-highlight-stars" [attr.aria-label]="highlight.review.rating + ' out of 5 stars'">
+            {{ '★'.repeat(highlight.review.rating) }}{{ '☆'.repeat(5 - highlight.review.rating) }}
+          </span>
+          <blockquote>“{{ highlight.review.comment }}”</blockquote>
+          <div>
+            <strong>{{ highlight.review.reviewerName }}</strong>
+            <a [routerLink]="['/product', highlight.product.slug]">{{ highlight.product.name }}</a>
+          </div>
+        </article>
+      }
+    </div>
+  } @else if (reviewLoadIncomplete) {
+    <div class="empty-state compact-empty" role="alert"><h3>Customer reviews are temporarily unavailable.</h3><p class="text-[15px]! font-medium! leading-7! sm:text-base!">The rest of the storefront is still available.</p></div>
+  } @else {
+    <div class="empty-state compact-empty"><h3>No customer reviews yet.</h3><p class="text-[15px]! font-medium! leading-7! sm:text-base!">Customer reviews will appear here when they are available.</p></div>
+  }
+</section>
+
+<section class="home-promo page-shell" aria-labelledby="home-promo-title">
+  <img [src]="config.editorialImageUrl" [alt]="config.editorialImageAlt" width="640" height="640" loading="lazy" decoding="async" />
+  <div>
+    <h2 id="home-promo-title">{{ config.editorialHeading }}</h2>
+    <p>{{ config.editorialDescription }}</p>
+    <a class="button button-primary" routerLink="/shop">Start shopping <i class="uil uil-arrow-right" aria-hidden="true"></i></a>
+  </div>
+</section>
+}
